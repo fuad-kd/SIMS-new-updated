@@ -86,6 +86,7 @@
                 <button onclick="showAdminPanel('routine-panel')" id="routine-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Publish Routine</button>
                 <button onclick="showAdminPanel('calendar-panel'); fetchAcademicCalendar();" id="calendar-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Calendar</button>
                 <button onclick="showAdminPanel('publish-results-panel')" id="publish-results-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Results</button>
+                <button onclick="showAdminPanel('feedback-panel'); fetchFeedbackData();" id="feedback-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Feedback</button>
             </div>
 
             <div id="dashboard-panel" class="panel-content">
@@ -249,7 +250,44 @@
                     <div id="publish-message" class="mt-2 hidden"></div>
                 </div>
             </div>
-        </section>
+
+            <div id="feedback-panel" class="panel-content hidden">
+                <h3 class="text-xl font-semibold mb-4">⭐ Student Feedback & Ratings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded-lg shadow-md card-border-blue">
+                        <p class="text-gray-500 font-medium">Total Submissions</p>
+                        <p id="total-submissions" class="text-3xl font-bold text-gray-900 mt-1">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-md card-border-green">
+                        <p class="text-gray-500 font-medium">Average Rating</p>
+                        <p id="average-rating" class="text-3xl font-bold text-green-600 mt-1">0.00 / 5</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-md card-border-orange">
+                        <p class="text-gray-500 font-medium">Last Submission Date</p>
+                        <p id="last-submission-date" class="text-lg font-bold text-orange-600 mt-1">N/A</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-xl border border-gray-200">
+                    <h4 class="text-lg font-semibold mb-4">Feedback List</h4>
+                    <div class="overflow-x-auto" style="min-height: 250px;">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Student ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Rating</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="feedback-list-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="4" class="text-center py-4 text-gray-500">No feedback submitted yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            </section>
 
         <section id="student-section" class="hidden mt-6" style="display: none;">
             <h2 class="text-3xl font-bold mb-6 text-indigo-700 border-b pb-2">Welcome, <span id="student-name">Student</span>!</h2>
@@ -317,10 +355,14 @@
                     <form id="feedbackForm" onsubmit="submitFeedback(event)">
                         <label class="block mb-2 font-medium">Rate your experience:</label>
                         <div class="flex gap-4 mb-4 text-2xl cursor-pointer select-none">
-                            <span onclick="setRating(1)">😡</span><span onclick="setRating(2)">🙁</span><span onclick="setRating(3)">😐</span><span onclick="setRating(4)">🙂</span><span onclick="setRating(5)">😍</span>
+                            <span id="r1" onclick="setRating(1)">😡</span>
+                            <span id="r2" onclick="setRating(2)">🙁</span>
+                            <span id="r3" onclick="setRating(3)">😐</span>
+                            <span id="r4" onclick="setRating(4)">🙂</span>
+                            <span id="r5" onclick="setRating(5)" class="font-bold" style="opacity: 1;">😍</span>
                         </div>
                         <input type="hidden" id="ratingValue" value="5">
-                        <textarea class="w-full p-3 border rounded mb-4" placeholder="Suggestions..."></textarea>
+                        <textarea id="feedbackComment" class="w-full p-3 border rounded mb-4" placeholder="Suggestions..."></textarea>
                         <button class="bg-indigo-600 text-white px-6 py-2 rounded font-bold">Submit</button>
                     </form>
                 </div>
@@ -417,6 +459,7 @@
             if (panelId === 'dashboard-panel') fetchDashboardData();
             if (panelId === 'routine-panel') populateRoutineDropdowns();
             if (panelId === 'publish-results-panel') initPublishResults();
+            // The feedback fetching is now handled in the tab click event for efficiency
         }
 
         function showStudentTab(tabId) {
@@ -425,6 +468,7 @@
             animatePanel(tabId);
             
             if (tabId === 's-map' && map) setTimeout(() => map.invalidateSize(), 100);
+            if (tabId === 's-feedback') setRating(parseInt(document.getElementById('ratingValue').value || 5)); // Initialize or reset rating UI
         }
 
         // --- AUTH ---
@@ -758,9 +802,106 @@
             mapInitialized = true;
         }
 
-        // --- FEEDBACK ---
-        function setRating(n) { document.getElementById('ratingValue').value = n; alert(`You selected rating: ${n}/5`); }
-        function submitFeedback(e) { e.preventDefault(); alert("Thank you! Your feedback has been submitted anonymously."); e.target.reset(); }
+        // --- FEEDBACK (Student & Admin Logic) ---
+        
+        function setRating(n) { 
+            document.getElementById('ratingValue').value = n;
+            // Visual update for the rating
+            const emojis = ['😡', '🙁', '😐', '🙂', '😍'];
+            for(let i=1; i<=5; i++) {
+                const el = document.getElementById(`r${i}`);
+                if (el) {
+                    el.style.opacity = (i <= n) ? '1' : '0.4';
+                    el.style.fontWeight = (i === n) ? 'bold' : 'normal';
+                }
+            }
+        }
+
+        async function submitFeedback(e) { 
+            e.preventDefault();
+            const user = auth.currentUser;
+            if (!user) { alert("Please log in to submit feedback."); return; }
+
+            const rating = parseInt(document.getElementById('ratingValue').value);
+            const comment = document.getElementById('feedbackComment').value;
+            
+            // Determine student ID for storage
+            let studentId = 'N/A';
+            try {
+                const doc = await db.collection("students").doc(user.email).get();
+                if(doc.exists) studentId = doc.data().studentId;
+            } catch(e) {
+                console.error("Could not fetch student data for feedback submission:", e);
+            }
+
+            try {
+                await db.collection("feedback").add({
+                    studentId: studentId,
+                    email: user.email,
+                    rating: rating,
+                    comment: comment,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Thank you! Your feedback has been submitted."); 
+            } catch(err) {
+                alert("Error submitting feedback: " + err.message);
+            }
+            e.target.reset(); 
+            setRating(5); // Reset UI to 5 stars
+        }
+
+        async function fetchFeedbackData() {
+            try {
+                const snap = await db.collection("feedback").orderBy("timestamp", "desc").get();
+                const feedbackList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+                const tbody = document.getElementById('feedback-list-body');
+                tbody.innerHTML = '';
+                
+                if(feedbackList.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">No feedback submitted yet.</td></tr>';
+                    document.getElementById('total-submissions').textContent = 0;
+                    document.getElementById('average-rating').textContent = '0.00 / 5';
+                    document.getElementById('last-submission-date').textContent = 'N/A';
+                    return;
+                }
+            
+                let totalRating = 0;
+                let lastDateString = 'N/A';
+                
+                feedbackList.forEach(f => {
+                    totalRating += f.rating;
+                    // Handle Firebase Timestamp conversion
+                    let dateString = 'N/A';
+                    if (f.timestamp && f.timestamp.toDate) {
+                        dateString = f.timestamp.toDate().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: '2-digit' });
+                    } else if (f.timestamp) {
+                        dateString = new Date(f.timestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: '2-digit' });
+                    }
+                    
+                    if(lastDateString === 'N/A') lastDateString = dateString; // The first one is the latest
+            
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-6 py-3 text-xs text-gray-500">${dateString}</td>
+                        <td class="px-6 py-3 text-sm font-medium text-gray-900">${f.studentId || f.email || 'Anonymous'}</td>
+                        <td class="px-6 py-3 text-lg font-bold text-indigo-600">${f.rating} / 5</td>
+                        <td class="px-6 py-3 text-sm text-gray-700 max-w-xs truncate">${f.comment}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            
+                const average = (totalRating / feedbackList.length).toFixed(2);
+                
+                document.getElementById('total-submissions').textContent = feedbackList.length;
+                document.getElementById('average-rating').textContent = `${average} / 5`;
+                document.getElementById('last-submission-date').textContent = lastDateString;
+                
+            } catch(error) {
+                console.error("Error fetching feedback data: ", error);
+                document.getElementById('feedback-list-body').innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Error loading data. Check console.</td></tr>`;
+            }
+        }
 
         // --- ADMIN UTILS (Publish Results) ---
         
