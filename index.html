@@ -32,13 +32,11 @@
         #map { height: 400px; width: 100%; border-radius: 0.5rem; z-index: 1; }
     </style>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script> 
     
-    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -88,7 +86,6 @@
                 <button onclick="showAdminPanel('routine-panel')" id="routine-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Publish Routine</button>
                 <button onclick="showAdminPanel('calendar-panel'); fetchAcademicCalendar();" id="calendar-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Calendar</button>
                 <button onclick="showAdminPanel('publish-results-panel')" id="publish-results-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Results</button>
-                <!-- NEW: Feedback Tab -->
                 <button onclick="showAdminPanel('feedback-panel'); fetchFeedback();" id="feedback-tab" class="tab-btn px-4 py-2 font-medium rounded-t-lg inactive-tab hover:bg-gray-50">Feedback</button>
             </div>
 
@@ -219,10 +216,11 @@
             <div id="routine-panel" class="panel-content hidden">
                 <h3 class="text-xl font-semibold mb-4">🗓️ Publish Routine</h3>
                 <form id="routineUploadForm" class="bg-white p-6 rounded shadow">
-                    <select id="routineDept" class="w-full p-3 border rounded mb-4"><option>Select Dept</option></select>
-                    <input type="text" id="routineTitle" placeholder="Title" class="w-full p-3 border rounded mb-4">
-                    <input type="file" id="routineFile" accept="application/pdf" class="w-full p-3 border rounded mb-4">
-                    <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded font-bold hover:bg-purple-700">Upload</button>
+                    <p class="text-sm text-gray-500 mb-2">Upload a CSV file for the Departmental Routine with columns: [Time, Day, Course, Room].</p>
+                    <select id="routineDept" class="w-full p-3 border rounded mb-4"><option value="">Select Dept</option></select>
+                    <input type="text" id="routineTitle" placeholder="Routine Title (e.g., Spring 2024)" class="w-full p-3 border rounded mb-4">
+                    <input type="file" id="routineFile" accept=".csv" class="w-full p-3 border rounded mb-4">
+                    <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded font-bold hover:bg-purple-700">Upload Routine CSV</button>
                     <div id="routine-message" class="mt-2 hidden"></div>
                 </form>
                 <div id="published-routines-list" class="mt-6"></div>
@@ -258,7 +256,6 @@
                 </div>
             </div>
             
-            <!-- NEW ADMIN FEEDBACK PANEL -->
             <div id="feedback-panel" class="panel-content hidden">
                 <h3 class="text-xl font-semibold mb-4">🌟 Student Feedback & Ratings</h3>
                 <div class="bg-white p-6 rounded shadow-xl border border-gray-200">
@@ -308,8 +305,10 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded shadow">
-                        <h4 class="font-bold mb-2">Class Routine</h4>
-                        <div id="s-routine-display"></div>
+                        <h4 class="font-bold mb-2">Class Routine <span id="s-routine-title" class="text-sm text-gray-500"></span></h4>
+                        <div id="s-routine-display" class="overflow-x-auto">
+                            </div>
+                        <p id="s-routine-note" class="text-sm mt-2 italic text-gray-500"></p>
                     </div>
                     <div class="bg-white p-6 rounded shadow overflow-y-auto" style="height: 250px;">
                         <h4 class="font-bold mb-2">Upcoming Events</h4>
@@ -325,7 +324,6 @@
                 <h3 class="text-xl font-semibold mb-4">📍 Campus Map (PCIU Location)</h3>
                 <div class="bg-white p-4 rounded shadow mb-4">
                     <p class="text-gray-600 mb-2">The map shows the university's location. Click below to find your current spot.</p>
-                    <!-- Updated button to call locateUser -->
                     <button onclick="locateUser()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2">
                         <span>Locate Me</span>
                     </button>
@@ -384,8 +382,7 @@
                 <h3 class="text-xl font-semibold mb-4">🧮 CGPA Calculator (Scale 4.0)</h3>
                 <div class="bg-white p-6 rounded shadow max-w-xl mx-auto">
                     <div id="course-input-container" class="space-y-4 mb-6">
-                        <!-- Course input fields will be added here by JS -->
-                    </div>
+                        </div>
                     
                     <button onclick="addCourseField()" type="button" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded mb-4 hover:bg-indigo-200 font-medium">+ Add Course</button>
                     
@@ -788,7 +785,16 @@
                 document.getElementById('s-program-display').textContent = data.program || 'N/A';
                 document.getElementById('s-cgpa-display').textContent = (data.cgpa || 0).toFixed(2);
                 document.getElementById('s-status-display').textContent = data.status;
-                document.getElementById('s-routine-display').textContent = data.routine || 'No notes.';
+                // document.getElementById('s-routine-display').textContent = data.routine || 'No notes.'; // Original note field
+                document.getElementById('s-routine-note').textContent = data.routine || ''; // Keeping the admin note field separate
+                
+                // NEW: Fetch and render departmental routine
+                if (data.department) {
+                    await fetchDepartmentRoutine(data.department);
+                } else {
+                    document.getElementById('s-routine-display').innerHTML = '<p class="text-gray-500 italic">Department not specified for routine.</p>';
+                    document.getElementById('s-routine-title').textContent = '';
+                }
 
                 renderHistory(data.semesters);
                 fetchAcademicCalendar(true); 
@@ -800,6 +806,52 @@
                 // auth.signOut(); // Keep user logged in if error is minor
             }
         }
+
+        // NEW: Function to fetch and display routine for a department
+        async function fetchDepartmentRoutine(department) {
+            const c = document.getElementById('s-routine-display');
+            const titleEl = document.getElementById('s-routine-title');
+            c.innerHTML = '<p class="text-gray-500 italic">Loading routine...</p>';
+            titleEl.textContent = '';
+            
+            try {
+                const doc = await db.collection("routines").doc(department).get();
+                if (doc.exists && doc.data().schedule) {
+                    const data = doc.data();
+                    titleEl.textContent = data.title ? `(${data.title})` : '';
+                    
+                    // Render routine table
+                    c.innerHTML = `
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-2 text-left">Time</th>
+                                    <th class="p-2 text-left">Day</th>
+                                    <th class="p-2 text-left">Course</th>
+                                    <th class="p-2 text-left">Room</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                ${data.schedule.map(r => `
+                                    <tr>
+                                        <td class="p-2">${r.time}</td>
+                                        <td class="p-2">${r.day}</td>
+                                        <td class="p-2">${r.course}</td>
+                                        <td class="p-2">${r.room}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    c.innerHTML = '<p class="text-gray-500 italic">No departmental routine published yet.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching routine:", error);
+                c.innerHTML = '<p class="text-red-500 italic">Failed to load routine.</p>';
+            }
+        }
+
 
         function renderHistory(sems) {
             const c = document.getElementById('semester-results-accordion');
@@ -1029,7 +1081,7 @@
 
         // --- ADMIN UTILS (Calendar & Results) ---
         
-        // Change 1: CSV Upload Logic
+        // Change 1: CSV Upload Logic for Calendar
         document.getElementById('calendarUploadForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const file = document.getElementById('calendarFile').files[0];
@@ -1093,6 +1145,72 @@
                     }
                 }
             });
+        }
+
+        // NEW: Routine Upload Logic (Similar to Calendar)
+        document.getElementById('routineUploadForm').addEventListener('submit', handleRoutineUpload);
+
+        async function handleRoutineUpload(e) {
+            e.preventDefault();
+            const dept = document.getElementById('routineDept').value;
+            const title = document.getElementById('routineTitle').value.trim();
+            const file = document.getElementById('routineFile').files[0];
+            const msg = document.getElementById('routine-message');
+            msg.classList.add('hidden');
+
+            if (!dept || !file) {
+                msg.textContent = 'Please select a Department and a CSV file.';
+                msg.className = "mt-2 p-2 bg-red-100 text-red-700 rounded border border-red-300";
+                msg.classList.remove('hidden');
+                return;
+            }
+
+            Papa.parse(file, {
+                header: false,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    // Expected CSV columns: [Time, Day, Course, Room]
+                    const routineData = results.data
+                        .filter(row => row.length >= 4) 
+                        .map(row => ({ time: row[0].trim(), day: row[1].trim(), course: row[2].trim(), room: row[3].trim() }));
+
+                    if (routineData.length === 0) {
+                         msg.textContent = 'CSV is empty or incorrectly formatted. Expected columns: Time, Day, Course, Room.';
+                         msg.className = "mt-2 p-2 bg-red-100 text-red-700 rounded border border-red-300";
+                         msg.classList.remove('hidden');
+                         return;
+                    }
+
+                    try {
+                        // Store routine in 'routines' collection, with department name as the document ID
+                        await db.collection("routines").doc(dept).set({ 
+                            title: title,
+                            schedule: routineData,
+                            uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        msg.textContent = `Successfully uploaded routine for ${dept} (${routineData.length} entries).`;
+                        msg.className = "mt-2 p-2 bg-green-100 text-green-700 rounded border border-green-300";
+                        msg.classList.remove('hidden');
+                    } catch (error) {
+                        msg.textContent = 'Error saving to database: ' + error.message;
+                        msg.className = "mt-2 p-2 bg-red-100 text-red-700 rounded border border-red-300";
+                        msg.classList.remove('hidden');
+                    }
+                },
+                error: function(error) {
+                    msg.textContent = 'Error parsing CSV: ' + error.message;
+                    msg.className = "mt-2 p-2 bg-red-100 text-red-700 rounded border border-red-300";
+                    msg.classList.remove('hidden');
+                }
+            });
+        }
+        
+        // Update populateRoutineDropdowns to use unique departments from student data
+        function populateRoutineDropdowns() {
+             const d = document.getElementById('routineDept');
+             d.innerHTML = '<option value="">Select Dept</option>';
+             // Map and filter for unique, non-empty department names
+             new Set(allStudentDocs.map(x=>x.data().department).filter(Boolean)).forEach(x => d.add(new Option(x,x)));
         }
         
         let searchTimeout;
@@ -1184,13 +1302,7 @@
             }
         }
         
-        document.getElementById('routineUploadForm').addEventListener('submit', async (e) => { e.preventDefault(); console.log("Routine upload logic triggered."); });
-        function populateRoutineDropdowns() {
-             const d = document.getElementById('routineDept');
-             d.innerHTML = '<option>Select Dept</option>';
-             new Set(allStudentDocs.map(x=>x.data().department)).forEach(x => d.add(new Option(x,x)));
-        }
-
+        // document.getElementById('routineUploadForm').addEventListener('submit', async (e) => { e.preventDefault(); console.log("Routine upload logic triggered."); }); // Removed empty function
     </script>
 </body>
 </html>
